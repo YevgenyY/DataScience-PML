@@ -1,0 +1,218 @@
+This is a lecture a lecture about preprossings, preprocessing covariants
+with principal components analysis. The idea is that often you have multiple
+quantitative variables and sometimes they'll be highly
+correlated with each other. In other words, they'll be very similar to
+being the almost the exact same variable. In this case, it's not necessarily useful
+to include every variable in the model. You might want to include some summary
+that captures most of the information in those
+quantitative variables. So, as an example I'm going to use the
+spam data set again. So I've loaded the caret package here, and
+I've loaded the kernel app package, and loaded the
+spam data set. I again, create a training and test set
+and I'm going to perform only the operations on the
+training set that I'm doing here. So that all exploration and model creation
+and feature building has to happen in the
+training set. The first thing that I do is that I leave out just the 58th column of this
+training set. Which in this case is the outcome. So I'm looking at all the other predictor
+variables. And I calculate the correlation between
+all those columns. The correlation between all predictor
+variables. And I take its absolute value. So I'm looking for all the predictor
+variables that that have a very high correlation or are very
+similar to each other. Every variable has a correlation of 1 with
+itself. So I'm not interested in those variable. You know, removing variables that have
+high correlations with themselves, since they
+all do. So I set the diagonal of those matrix,
+that comes out to be equal to 0. That's basically just setting the
+correlation between variables with itself, equal to 0. And then I look, which of these variables
+have a high correlation with each other? In other words, which of the variables
+have a correlation greater than 0.8? So it turns out two variables have a very
+high correlation with each other. They are the num415 and num857. So it's how, if the number 415 and 857 appears in the email and frequently
+appears together. This is likely because there's a phone
+number that has similar variables there. So, if I look at the spam dataset, at the
+columns 34 and 32, which I got from getting that from
+the previous correlation variable. I see that it's these two variables, these two columns that are highly correlated
+with each other. And if I plot those two columns against
+each other, I see exactly what I'd expect. So, the frequency of four 415 and 857 is
+incredibly highly correlated, this basically lie perfectly
+on a line with each other. So, as the number of 415 appears more
+frequently, so does the number 857. So the idea is, including both of these
+predictors in the model might not necessarily be very
+useful. And so, the basic idea is, how can we take
+those variables and turn them into, say, a single variable
+that might be better? And one idea is to think about it as a
+weighted combination of those predictors that
+explains most of what's going on. So the idea is to pick the combination that captures the most
+information possible. And the benefits here are, you're reducing
+the number of predictors you need to include in your
+model. So that's nice. And you're also reducing noise. In other words, you're averaging or
+combining variables together, so you might reduce
+them together. So you do this in a clever way, you actually gain quite a bit by doing
+principal component analysis. So one idea to think about is just. Basically what you're trying to do is
+figure out a combination of these variables that
+explain close to the variability. So just as an example, here's a
+combination I could do. I could say I could take 0.71 times the
+415 variable plus 0.71 times 857 variable. And create a new variable called x. Which is basically the sum of those two
+variables. Then I could take the difference of those
+two variables. By basically doing 0.71 times 415 minus
+0.71 times 857. So this is basically adding, x is adding
+the two variables together, y is subtracting
+the two variables. So then if I plot those variables versus
+each other, when I add them up, that's the x-axis, and when I
+take the difference, that's the y-axis. And so you can see most of the variability
+is happening in the x-axis. In other words there's lots of points all
+spread out across the x-axis, but most of the points are clustered right
+here at 0 on the y-axis. So that almost all of these points have a
+y value of 0. So, the adding the two variables together
+captures most of the information in those two variables and subtracting the variables takes less
+information. So the idea here is we might want to use the sum of the two variables as a
+predictor. That will reduce the number predicted that
+we will have to use and renew some of the noise. So there are two related problems to how
+you do this in a more general sense. And so the ideas are find a new set of
+variables based on the variables that you have that are uncorrelated and
+explain as much variability as possible. In other words from the previous plot,
+we're looking for the x variable which has lots of variation
+in it. And not the y variable which is almost
+always 0. So if you put the variables together in one matrix, create the best matrix with
+fewer variables. In other words this is lower rank if you're talking mathematically that
+explains the original data. These two problems are very closely
+related to each other. And they're both the idea that, can we use fewer variables to explain almost
+everything that's going on. The first goal is a statistical goal and the second goal is a data compression
+goal. But they're also, they're both very useful
+for machine learning. So there's two related solutions and
+they're very similar to each other. So if x is a matrix with a variable in
+each column, and an observation in each row, like a data in
+frame you usually have in R. Then the singular value decomposition is a
+matrix decomposition. So it takes that data frame X, and breaks
+it up into three matrices, a U matrix, and D matrix,
+and a B matrix. And the V, the columns of U are called the
+left singular vectors. And the columns of B are called the right
+singular vectors. And D is a diagonal matrix. Those are called the singular values. You will learn about this in getting data or exploratory data analysis if you've
+taken those classes. The principle components are equal to the
+right singular vectors if you scale the data in the same
+way. In other words, the solution to both of
+those problems that I talked about on the previous slide is the same if
+you do the right scaling. So the idea here is, these variables in V
+are constructed to explain the maximum amount
+of variation in the data. So, just to show you how this works in a real example, suppose we take that spam
+data set. And we just take those two variables that
+were highly correlated with each other. Variables 34 and 32. So then we do principal components. Same as the singular value decomposition
+on the, on that small data set that just consists of those
+two variables. If we plot the first principle component
+versus the second principle component. We see a plot that is very similar to the
+one that I showed you earlier. Where the first principal component looks
+like adding the two variables together. And the second principal component looks a
+lot like subtracting the two variables from
+each other. So why would we do principal components,
+instead of just adding and subtracting? Well, principal components allows you to
+perform this operation, even if you have more than just two
+variables. You may be able to reduce all of the
+variables down into a very small number of combinations of sums and differences
+and weighted sums and differences of the variables that
+you've observed. So, using principal components can let you
+look at a large number of quantitative variables and
+reduce it quite a bit. The one thing that you can also look at it in this principal component object is
+the rotation matrix. Which is basically how it's summing up the two variable to get each of the principal
+components. And so here you can see why I put 0.71 in the sum and the difference on the first
+slide. So, principal component one is just 0.7081
+times num14, 415, and 0.7061 times num857. Principal component two is just the
+difference again, by multiply by 0.7061, and minus
+0.7081. So basically, in this particular case the
+first principal component, the one that explains the most variability is just
+adding the two variables up. And the variable that explains the second
+most variability in these two variables is the taking the difference
+between the two variables. So in this spam data we can do, actually
+do this for a more variables than just the
+two variables. This is why principal components may be
+useful. So here, I'm creating a variable that's
+just going to be the color we're going to color our
+points by. So it's color equal to black if you are
+not a spam and color equal to red if you're a
+spam. And this variable here, or this statement
+here calculates the principal components on the
+entire data set. So you'll notice that I've applied a
+function of the data set, the log 10 transform. And I've added one. I've done this to make the data look a
+little bit more Gaussian. Because some of the variables are normal looking, because some of the variables are
+skewed. And you often have to do that for principal component analysis to look
+sensible. So then I calculated the principal
+components of the entire data set. So in this case I can now again plot principal component one, versus
+principal component two. Principle component one is no longer a
+very easy addition of two variables. It might be some quite complicated
+combination of all the variables in the data set. But it's the combination that explains the
+most variation in the data. Principle component two is the combination
+that explains the second most variation. And principal component three explains the
+third most and so forth. So if I plot principal component one. That's just a variable that I've
+calculated. Versus variable principal component two that's another variable that I've
+calculated. Then I color them by the spam indicator. So, whether each point, so each of these points corresponds to a single
+observation. The red ones correspond to spam
+observations and the black ones just ham observations. You could see that in principal component one space, or along the principal
+component one. There's a little bit of separation of the
+ham messages from the spam messages. In other words the spam messages tend to
+have a little bit higher values than principal
+component one. So this is a way to reduce the size of
+your data set while still capturing a large amount of variation
+which is a, a, the idea behind feature creation. You can do this in caret as well. So you can do it using the pre-process
+function. So this is just using, basically doing a similar type operation with a caret
+package. You pass the pre-process function. The same data set you did before. You tell it what methods you use. In this case you tell it to use principal
+component analysis or PCA. You tell it the number of principal
+components to compute. And then, what we can do is you can
+actually calculate the values of each new principle compo, so the
+principle component are two variables. There is principle component one,
+principle component two. And they're basically a model that you fit
+to the data. So the idea is that if you get a new
+observation you have to predict what the principle component
+will look like for that new variable. So we pass this pre-processed object and
+the data set, to the predict function and that gives us
+the principle component. If we plot them versus each other, you see
+spam pc 1, so that's principle component 1 versus
+principle component 2 here. And again you see a little bit of
+separation. Between the ham and the spam messages, in both principle component one and principle
+component two. You can do this, like I showed you before,
+by doing preprocessing with the method PCA,
+using the preProcess function. And then you can create training
+predictions by using the predict function. And then, fitting a model that relates the training variable to the principal
+component. So here I haven't used the full training
+set as the data for fitting my model. I've just [UNKNOWN] the principal
+components for the model fitting. In the test data set you have to use the
+same principal component that you calculated in the
+trained video set for the test variables. So the idea here is we again pass at the pre-process object that we calculated
+in the training set. But now we pass at the new testing data. So this predict function is going to take the principle components we calculated
+from training. And get the new values for the test data
+set on those same principle components. So then, what you can do, is you can
+predict. The, using the modelFit on the original
+data using the test principal components. And you can use the confusionMatrix
+argument in caret to get the accuracy. And so, here we calculated a relatively
+small number of principal components, but still have a
+relatively high accuracy in prediction. So principal component analysis can reduce the number of variables while maintaining
+accuracy. So the other thing that you can do is you
+can actually decide for this analysis to not
+use the predict function separately. You can build it right into your training
+exercise. So if you take the train function from the caret package, and you pass it in a
+training set. But you tell it to pre process with
+principal component analysis. It will do that pre-processing as part of
+the training process. And then when you do the prediction on the
+new data set you just pass it a testing data set and will, it will
+actually calculate the PC's for you. The reason why I showed you the more
+elaborate way of calculating the PC's first and passing
+them to the model. Is so that you can see what's going on
+under the hood. When you pass a command like this, to the
+train function in the caret package. So this is most useful for linear type
+models. This includes linear discriminant
+analysis, linear and generalized linear regression, things
+like that. It can make it a little bit harder to
+interpret the predictors. In the case where I only had two
+variables, it was just the sum and the difference of those variables, it
+was very easy to predict what that meant. In general though, if you do principal components on a large number of
+quantitative variables. In each principal component might be quite
+a complex weighted sum of the variables you've observed and so it
+could be very hard to interpret. You have to watch out for outliers. Outliers can really wreak havoc on
+calculating principal components. So you do that by looking at an exploratory analysis first and
+identifying outliers. Doing transforms, like I did the log ten
+transform of the data, you might do Box Cox
+transformations as well. And again, plotting predictors to identify
+problems is the key place to figure out where this is
+working out. For more information, you can see the
+exploratory data analysis class where we talk about principal component
+analysis and SVD in more detail. And this book the Elements of Statistical
+Learning has a quite nice, if a little bit technical
+overview. Of how principal components work for
+machine learning.

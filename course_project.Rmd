@@ -1,25 +1,128 @@
 ---
-title: "Coursera_DS_PML_Course_Project"
+title: "Coursera Data Science Practical Machine Learning Course Project"
 author: "Yevgeny V.Yorkhov"
 date: "01/30/2016"
 output: html_document
 ---
-#Background and Introduction
+# Background and Introduction
 
 Using devices such as Jawbone Up, Nike FuelBand, and Fitbit is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
 
 In this project, we will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participant They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. The five ways are exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E). Only Class A corresponds to correct performance. The goal of this project is to predict the manner in which they did the exercise, i.e., Class A to E. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
 
-#Data Processing
+# Question
+The data analyis in this report sets out to answer the following question:
 
-```{r}
-df = read.csv("data/pml-training.csv")
+Is is possible to classify the manner in in which a dumbbel execise was performed using sensor data from a glove, belt, arm-band and dumbbell?
+
+# Data Processing
+
+## Import and clean data
+```{r, load_and_clean_data}
+# Load data from
+# urlTrain <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+# urlTest <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+# download.file(urlTrain, "data/pml-training.csv", method="curl")
+# download.file(urlTest, "data/pml-testing.csv", method="curl")
+training = read.csv("data/pml-training.csv", na.strings=c("NA", "#DIV/0!", " "))
+testing = read.csv("data/pml-testing.csv", na.strings=c("NA", "#DIV/0!", " "))
+
+# remove rows with NAs
+cols_vector <- (colSums(is.na(training))==0)
+training <- training[,cols_vector]
+testing <- testing[,cols_vector]
+
+# remove useless columns: X, ser_name, raw_timestamp_part_1, raw_timestamp_part_2, 
+# cvtd_timestamp, new_window, num_window
+trainOrig <- training[,-c(1:7)]
+testOrig <- testing[,-c(1:7)]
 ```
 
-You can also embed plots, for example:
+## Data splitting
+In order to estimate out of sample error we need to split data into ***training*** (70%) set for training and ***test*** (30%) set for validation.
 
-```{r, echo=FALSE}
-plot(cars)
+```{r, split_data}
+library(caret); 
+inTrain <- createDataPartition(y=trainOrig$classe, p=0.7, list=FALSE)
+train <- trainOrig[inTrain,]
+valid <- trainOrig[-inTrain,]
+dim(train); dim(valid)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Find variables correlation
+After data cleaning we have a training set with 52 variables/predictors. In order to choose the training algorythm we need to find correlation between valiables. 
+
+```{r, find_predictors_importance}
+library(corrplot)
+set.seed(343007)
+# "classe" index is 53
+M <- abs(cor(train[,-53]))
+diag(M) <- 0 # remove variables correlation with themselves
+which(M > 0.9, arr.ind = TRUE)
+
+corrplot(corr=cor(train[, -53]), method = "circle", order="hclust", type='lower', tl.cex=0.5,mar=c(0,2,2,1), 
+         tl.col='blue',tl.pos='ld', diag=FALSE, 
+         title="Fig. 1 Pairwise correlations of the variables in the training set")
+```
+
+Here we have highly correlated variables. Hence we use Random Forest algorythm because it automatically selects important variables and is robust to correlated covariates & outliers in general. As far as we have 5 values of "classe" factor variable - we will use 5-fold cross validation when applying the algorithm.
+
+# Some useful PCA analisys
+```{r, pca}
+predNames <- names(train)
+predIdx <- grep("^classe", predNames, invert = TRUE)
+predNames <- predNames[predIdx]
+preProc <- preProcess(train[, predNames], method = "pca", thresh = 0.99)
+preProc
+```
+
+As we can see we need 36 variables (*instead of 52*) to capture 99% of the variance. Despite this the amount of computation is too huge for my computer.
+
+## Data modeling
+Random Forest is a processor intensive algorythm. That is why we have to choose a strategy to reduce the computational time. The strategies are like these:
+
+- Reduce the training set -> cut off the least important variables from the model -> train model again on full training set;
+- Reduce the number of trees (*ntree* parameter) that Random Forest tries to compute on full training set, but use all the variables;
+
+Here we use "reducing the number of trees" strategy and check the accuracy after building a model.
+
+```{r,data_modeling,cache=TRUE}
+library(rattle);library(randomForest); library(rpart)
+trCtl <- trainControl(method="cv", 5)
+modFit <- train(classe ~., method="rf", trControl=trCtl, data=train, ntree=128)
+
+# get the importance of the variables
+varImp <- varImp(modFit)
+plot(varImp, main="Fig.2 Variable importance in decreasing order")
+
+modFit
+```
+
+## Accuracy and out of sample error
+Now we estimate the model on the validation data set.
+```{r, data_validation}
+pred <- predict(modFit, valid)
+cfm <- confusionMatrix(valid$classe, pred)
+cfm$overall['Accuracy']
+```
+
+Accuracy value is pretty well. So let's find out of sample error.
+```{r, oose}
+1 - as.numeric(cfm$overall['Accuracy'])
+```
+
+## Predicting on original testing set
+Here we try the model to predict outcome on original testing data set.
+```{r, predicting}
+predFin <- predict(modFit, testOrig)
+predFin
+```
+
+# Conclusion
+Random Forest algorythm with tuning control works well for Weight Lifting exercises analysis.
+
+# Appendix
+Here we plot some additional figures.
+```{r,appendix}
+plot(modFit, main="Fig.3 Number of selected predictors vs Accuracy")
+```
